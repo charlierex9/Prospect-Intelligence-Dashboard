@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prospect">
+<meta name="theme-color" content="#0a0e1a">
+<title>Prospect — Liquidity Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0e1a;--ink-2:#0e1424;--panel:#121a2e;--panel-2:#16203a;
+    --hairline:rgba(201,169,97,0.14);--hairline-soft:rgba(255,255,255,0.06);
+    --text:#f4f1ea;--text-dim:#9aa3b8;--text-faint:#5e677d;
+    --gold:#c9a961;--gold-bright:#e0c47e;
+    --urgent:#e5484d;--active:#e8a13a;--emerging:#4a8fd4;--missed:#7a8499;--green:#3fb87f;
+    --r:16px;--r-sm:11px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:'Hanken Grotesk',sans-serif;background:#05070d;color:var(--text);-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow:hidden;}
+  .device{position:relative;width:100%;max-width:440px;height:100vh;height:100dvh;
+    background:radial-gradient(120% 60% at 50% -5%, rgba(201,169,97,0.10), transparent 55%),radial-gradient(90% 50% at 90% 10%, rgba(74,143,212,0.07), transparent 50%),linear-gradient(180deg,var(--ink) 0%, #070a12 100%);
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,0.6);}
+  .device::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");mix-blend-mode:overlay;}
+  @media(min-width:480px){body{align-items:center;background:radial-gradient(circle at 50% 30%, #0d1424, #05070d 70%);}.device{height:92vh;max-height:920px;border-radius:42px;border:1px solid rgba(201,169,97,0.12);}}
+
+  header{position:relative;z-index:3;padding:calc(env(safe-area-inset-top) + 18px) 22px 16px;border-bottom:1px solid var(--hairline);background:linear-gradient(180deg, rgba(14,20,36,0.6), transparent);backdrop-filter:blur(12px);}
+  .brandrow{display:flex;align-items:flex-start;justify-content:space-between;}
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2.5px;color:var(--gold);text-transform:uppercase;}
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:25px;line-height:1;letter-spacing:-0.3px;}
+  .brand h1 em{font-style:italic;color:var(--gold-bright);font-weight:500;}
+  .live{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;letter-spacing:0.5px;}
+  .live .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,184,127,0.5);}70%{box-shadow:0 0 0 7px rgba(63,184,127,0);}100%{box-shadow:0 0 0 0 rgba(63,184,127,0);}}
+  .refresh{width:42px;height:42px;border-radius:50%;border:1px solid var(--hairline);background:rgba(201,169,97,0.06);color:var(--gold);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s;flex-shrink:0;}
+  .refresh:active{transform:scale(0.9);background:rgba(201,169,97,0.16);}
+  .refresh.spinning{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .valuestrip{display:flex;gap:10px;margin-top:16px;}
+  .stat{flex:1;background:rgba(255,255,255,0.025);border:1px solid var(--hairline-soft);border-radius:var(--r-sm);padding:10px 12px;}
+  .stat .label{font-size:10px;color:var(--text-faint);letter-spacing:0.3px;text-transform:uppercase;}
+  .stat .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:19px;color:var(--text);margin-top:3px;letter-spacing:-0.5px;}
+  .stat .num.gold{color:var(--gold-bright);}
+  .stat .sub{font-size:10px;color:var(--text-faint);margin-top:1px;}
+
+  main{position:relative;z-index:2;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:96px;}
+  .view{display:none;padding:18px 16px 0;animation:fade .4s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .section-label{display:flex;align-items:center;gap:9px;margin:6px 2px 14px;}
+  .section-label .dot{width:8px;height:8px;border-radius:2px;}
+  .section-label h2{font-family:'Fraunces',serif;font-weight:600;font-size:16px;letter-spacing:-0.2px;}
+  .section-label .count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);}
+
+  .card{position:relative;background:linear-gradient(160deg,var(--panel),var(--ink-2));border:1px solid var(--hairline-soft);border-radius:var(--r);padding:15px 16px;margin-bottom:12px;cursor:pointer;overflow:hidden;transition:transform .2s, border-color .2s;animation:cardin .5s backwards;}
+  @keyframes cardin{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .card:active{transform:scale(0.985);}
+  .card.urgent{border-left:3px solid var(--urgent);}
+  .card.active{border-left:3px solid var(--active);}
+  .card.emerging{border-left:3px solid var(--emerging);}
+  .card.missed{border-left:3px solid var(--missed);}
+  .card .glow{position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;opacity:0.07;filter:blur(30px);}
+  .card.urgent .glow{background:var(--urgent);}.card.active .glow{background:var(--active);}.card.emerging .glow{background:var(--emerging);}
+  .card-top{display:flex;align-items:center;gap:8px;margin-bottom:11px;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:4px 8px;border-radius:6px;}
+  .badge.urgent{background:rgba(229,72,77,0.16);color:#ff8a8d;}
+  .badge.active{background:rgba(232,161,58,0.16);color:#ffc878;}
+  .badge.emerging{background:rgba(74,143,212,0.16);color:#8cc0f5;}
+  .badge.missed{background:rgba(122,132,153,0.16);color:#aab3c6;}
+  .sector-tag{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-faint);letter-spacing:0.5px;text-transform:uppercase;margin-left:auto;}
+  .star{font-size:15px;color:var(--text-faint);transition:.2s;}
+  .star.on{color:var(--gold-bright);}
+  .card h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:-0.3px;line-height:1.1;}
+  .card .role{font-size:12px;color:var(--text-dim);margin-top:3px;}
+  .card .role b{color:var(--text);font-weight:600;}
+  .stake-pill{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold-bright);background:rgba(201,169,97,0.10);border:1px solid rgba(201,169,97,0.25);padding:4px 9px;border-radius:7px;letter-spacing:0.3px;}
+  .stake-pill .lbl{color:var(--text-faint);font-weight:500;font-size:9px;letter-spacing:0.5px;text-transform:uppercase;}
+  .card-fig{display:flex;align-items:flex-end;justify-content:space-between;margin-top:13px;}
+  .figure{display:flex;flex-direction:column;}
+  .figure .flabel{font-size:9px;color:var(--text-faint);letter-spacing:0.5px;text-transform:uppercase;}
+  .figure .fval{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;color:var(--gold-bright);letter-spacing:-1px;line-height:1;margin-top:3px;}
+  .figure .fval span{font-size:13px;color:var(--text-dim);}
+  .timing{text-align:right;font-size:10px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;}
+
+  .detail{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+  .card.open .detail{max-height:1400px;}
+  .detail-inner{padding-top:15px;margin-top:14px;border-top:1px solid var(--hairline-soft);}
+  .d-head{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;margin:18px 0 9px;display:flex;align-items:center;gap:8px;}
+  .d-head:first-child{margin-top:0;}
+  .d-head::after{content:"";flex:1;height:1px;background:var(--hairline-soft);}
+  .blurb{font-size:13px;color:var(--text-dim);line-height:1.6;}
+
+  .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .fin-cell{background:rgba(255,255,255,0.025);border:1px solid var(--hairline-soft);border-radius:10px;padding:10px 12px;}
+  .fin-cell .fk{font-size:9px;color:var(--text-faint);letter-spacing:0.4px;text-transform:uppercase;}
+  .fin-cell .fv{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--text);margin-top:3px;letter-spacing:-0.3px;}
+
+  .cap-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:12px;background:rgba(0,0,0,0.3);}
+  .cap-seg{height:100%;transition:.3s;}
+  .cap-legend{display:flex;flex-direction:column;gap:7px;}
+  .cap-row{display:flex;align-items:center;gap:9px;font-size:12px;}
+  .cap-sw{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+  .cap-name{color:var(--text-dim);flex:1;}
+  .cap-row.target .cap-name{color:var(--gold-bright);font-weight:700;}
+  .cap-pct{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--text);font-size:12px;}
+  .cap-row.target .cap-pct{color:var(--gold-bright);}
+
+  .row{margin-bottom:11px;}
+  .row .k{font-size:9px;color:var(--text-faint);letter-spacing:0.6px;text-transform:uppercase;margin-bottom:3px;}
+  .row .v{font-size:13px;color:var(--text);line-height:1.5;}
+  .row .v.rationale{color:#9bd9b5;font-style:italic;font-size:12px;}
+  .row .v.angle{color:var(--gold-bright);}
+  .row .v.src{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .actions{display:flex;gap:8px;margin-top:16px;}
+  .act{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--hairline);background:rgba(255,255,255,0.025);color:var(--text);cursor:pointer;transition:.2s;text-decoration:none;}
+  .act:active{transform:scale(0.96);}
+  .act.primary{background:rgba(201,169,97,0.14);border-color:rgba(201,169,97,0.4);color:var(--gold-bright);}
+  .act.done{background:rgba(63,184,127,0.14);border-color:rgba(63,184,127,0.4);color:#7fe0ad;}
+
+  .segmented{display:flex;background:rgba(255,255,255,0.03);border:1px solid var(--hairline-soft);border-radius:12px;padding:4px;margin-bottom:14px;}
+  .seg{flex:1;text-align:center;padding:9px 4px;font-size:12px;font-weight:600;color:var(--text-dim);border-radius:9px;cursor:pointer;transition:.25s;}
+  .seg.active{background:linear-gradient(160deg,var(--panel-2),var(--panel));color:var(--gold-bright);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+  .seg .n{font-family:'JetBrains Mono',monospace;font-size:9px;display:block;color:var(--text-faint);margin-top:1px;}
+  .seg.active .n{color:var(--gold);}
+  .chips{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
+  .chip{font-size:11px;font-weight:600;padding:7px 13px;border-radius:20px;border:1px solid var(--hairline-soft);background:transparent;color:var(--text-dim);cursor:pointer;transition:.2s;}
+  .chip.active{background:var(--gold);color:#1a1407;border-color:var(--gold);}
+  .search{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.03);border:1px solid var(--hairline-soft);border-radius:12px;padding:11px 14px;margin-bottom:16px;}
+  .search svg{flex-shrink:0;opacity:0.5;}
+  .search input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Hanken Grotesk',sans-serif;font-size:14px;}
+  .search input::placeholder{color:var(--text-faint);}
+
+  .wcard{background:linear-gradient(160deg,var(--panel),var(--ink-2));border:1px solid var(--hairline-soft);border-radius:var(--r);padding:14px 16px;margin-bottom:11px;animation:cardin .5s backwards;}
+  .wcard-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .wcard h3{font-family:'Fraunces',serif;font-weight:600;font-size:16px;}
+  .stage{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(74,143,212,0.14);color:#8cc0f5;letter-spacing:0.5px;margin-left:auto;}
+  .wcard .why{font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;}
+  .wcard-foot{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-faint);padding-top:10px;border-top:1px solid var(--hairline-soft);}
+  .wcard-foot .horizon{color:var(--gold);}
+  .empty{text-align:center;padding:50px 20px;color:var(--text-faint);}
+  .empty .ico{font-size:34px;opacity:0.3;margin-bottom:12px;}
+  .empty p{font-size:13px;line-height:1.6;}
+
+  nav{position:absolute;bottom:0;left:0;right:0;z-index:5;display:flex;padding:8px 14px calc(env(safe-area-inset-bottom) + 10px);background:linear-gradient(0deg, var(--ink) 60%, rgba(10,14,26,0.85));backdrop-filter:blur(20px);border-top:1px solid var(--hairline);}
+  .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;cursor:pointer;color:var(--text-faint);transition:.25s;}
+  .navbtn.active{color:var(--gold-bright);}
+  .navbtn svg{width:22px;height:22px;}
+  .navbtn span{font-size:10px;font-weight:600;letter-spacing:0.2px;}
+  .scanning{position:absolute;inset:0;z-index:20;background:rgba(5,7,13,0.85);backdrop-filter:blur(6px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+  .scanning.show{display:flex;}
+  .scanring{width:54px;height:54px;border:2px solid var(--hairline);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite;}
+  .scanning p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;}
+  ::-webkit-scrollbar{width:0;}
+</style>
+</head>
+<body>
+<div class="device">
+  <header>
+    <div class="brandrow">
+      <div class="brand">
+        <span class="eyebrow">Liquidity Intelligence</span>
+        <h1>Prospect<em>.</em></h1>
+        <div class="live"><span class="pulse"></span><span id="livetext">Last scan · today 07:00</span></div>
+      </div>
+      <div class="refresh" id="refreshBtn" title="Run scan">⟳</div>
+    </div>
+    <div class="valuestrip">
+      <div class="stat"><div class="label">Pipeline value</div><div class="num gold" id="pipeval">£0m</div><div class="sub" id="pipecount">0 live prospects</div></div>
+      <div class="stat"><div class="label">New today</div><div class="num" id="newtoday">0</div><div class="sub">since last scan</div></div>
+      <div class="stat"><div class="label">Act now</div><div class="num" id="urgentcount" style="color:#ff8a8d;">0</div><div class="sub">time-sensitive</div></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="view-today"></section>
+    <section class="view" id="view-pipeline">
+      <div class="segmented" id="horizonSeg">
+        <div class="seg active" data-h="week">This Week<span class="n" id="hc-week">0</span></div>
+        <div class="seg" data-h="month">This Month<span class="n" id="hc-month">0</span></div>
+        <div class="seg" data-h="year">This Year<span class="n" id="hc-year">0</span></div>
+      </div>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input type="text" id="searchInput" placeholder="Search name, company, sector…">
+      </div>
+      <div class="chips" id="sectorChips">
+        <div class="chip active" data-s="all">All sectors</div>
+        <div class="chip" data-s="Defence">Defence</div>
+        <div class="chip" data-s="Critical Tech">Critical Tech</div>
+        <div class="chip" data-s="Sports">Sports</div>
+      </div>
+      <div id="pipelineList"></div>
+    </section>
+    <section class="view" id="view-watch">
+      <div class="section-label"><span class="dot" style="background:var(--emerging);"></span><h2>Companies to Watch</h2><span class="count" id="watchcount">0</span></div>
+      <p style="font-size:12px;color:var(--text-faint);margin:-6px 2px 16px;line-height:1.5;">Early-stage names not yet in the pipeline. Build the relationship before the liquidity event.</p>
+      <div id="watchList"></div>
+    </section>
+  </main>
+
+  <nav>
+    <div class="navbtn active" data-tab="today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Today</span>
+    </div>
+    <div class="navbtn" data-tab="pipeline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+      <span>Pipeline</span>
+    </div>
+    <div class="navbtn" data-tab="watch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Watch</span>
+    </div>
+  </nav>
+
+  <div class="scanning" id="scanOverlay"><div class="scanring"></div><p id="scanText">SCANNING COMPANIES HOUSE…</p></div>
+</div>
+
+<script>
+// ---------- SAMPLE DATA (illustrative — fictional companies & people; live scanner replaces with real public-record data) ----------
+const OPPS = [
+  { id:1, horizon:'week', priority:'urgent', name:'Dr. Eleanor Whitlock', role:'Founder & CEO', company:'Lanthorn Quantum', sector:'Critical Tech',
+    event:'Secondary share sale', low:42, high:60, timing:'SH01 filed 2 days ago', stakePct:32, stakeNote:'Selling part of holding into the round',
+    blurb:'Bristol-based quantum-sensing firm building chip-scale atomic sensors for GPS-denied navigation, with defence and aerospace customers.',
+    fin:{revenue:'£9m', valType:'Valuation', valuation:'£160m', employees:'130', founded:'2018'},
+    cap:[{n:'Dr. E. Whitlock (Founder/CEO)',p:32,target:true},{n:'Dr. J. Okafor (Co-founder/CTO)',p:15},{n:'Lead VC',p:26},{n:'Other investors',p:19},{n:'Employee option pool',p:8}],
+    why:'Closed a £45m round at a £160m valuation with a founder-secondary component, ahead of a rumoured US listing.',
+    rationale:'Filing dated this week — the window before proceeds are committed is narrow.',
+    angle:'Lead with pre-listing tax structuring and a US/UK cross-border proceeds plan.', source:'Companies House · SH01' },
+
+  { id:2, horizon:'week', priority:'urgent', name:'Marcus Reeve', role:'Executive Chairman', company:'Skylock Defence', sector:'Defence',
+    event:'Trade sale', low:55, high:80, timing:'Announced Monday', stakePct:42, stakeNote:'Largest individual shareholder',
+    blurb:'Counter-UAS systems — radar and radio-frequency detection that protects airfields and critical sites from hostile drones.',
+    fin:{revenue:'£22m', valType:'Deal value', valuation:'£160m', employees:'180', founded:'2015'},
+    cap:[{n:'M. Reeve (Exec Chairman)',p:42,target:true},{n:'CEO',p:12},{n:'PE backer',p:30},{n:'Management',p:10},{n:'Other',p:6}],
+    why:'Acquired by a US prime for ~£160m. Chairman is the single largest individual holder.',
+    rationale:'Deal announced this week; completion expected within 60 days.',
+    angle:'Proceeds investment mandate plus earn-out structuring and IHT planning.', source:'RNS · Press' },
+
+  { id:3, horizon:'week', priority:'active', name:'Priya Anand', role:'Co-founder & CTO', company:'Verity OSINT', sector:'Critical Tech',
+    event:'Govt contract win', low:12, high:20, timing:'Contract awarded this week', stakePct:25, stakeNote:'One of two equal co-founders',
+    blurb:'Open-source-intelligence platform fusing public data into entity and network maps for UK intelligence and law-enforcement users.',
+    fin:{revenue:'£4m ARR', valType:'Last valuation', valuation:'£64m', employees:'45', founded:'2020'},
+    cap:[{n:'P. Anand (Co-founder/CTO)',p:25,target:true},{n:'T. Beckett (Co-founder/CEO)',p:25},{n:'Seed VC',p:22},{n:'Angels',p:18},{n:'Option pool',p:10}],
+    why:'Won a multi-year UKIC framework — a strong pre-fundraise signal for a Series A within six months.',
+    rationale:'Contract live this week — earliest moment to build the relationship.',
+    angle:'Introduce now, ahead of the raise. Position as the founder-friendly bank for the journey.', source:'Contracts Finder' },
+
+  { id:4, horizon:'month', priority:'active', name:'Sir David Hargreaves', role:'Majority shareholder', company:'Northgate FC', sector:'Sports',
+    event:'Club ownership restructuring', low:45, high:70, timing:'Completed 3 weeks ago', stakePct:75, stakeNote:'Sold majority; retains ~15% minority',
+    blurb:'Championship football club with a 24,000-seat stadium and a category-two academy in the north of England.',
+    fin:{revenue:'£38m', valType:'Club valuation', valuation:'£90m', employees:'310', founded:'1898'},
+    cap:[{n:'US consortium (new)',p:70},{n:'Sir D. Hargreaves',p:15,target:true},{n:'Local investors',p:10},{n:'Supporters\u2019 trust',p:5}],
+    why:'Sold a 70% majority stake in a club valued ~£90m to a US consortium, realising ~£60m.',
+    rationale:'Proceeds landed in the last 30 days — reinvestment decisions being made now.',
+    angle:'Lifestyle-asset financing, philanthropy structuring and a diversification mandate.', source:'Press' },
+
+  { id:5, horizon:'month', priority:'active', name:'Dr. Alan Pickering', role:'Founder & CEO', company:'Pennine Semiconductors', sector:'Critical Tech',
+    event:'PE recapitalisation', low:30, high:45, timing:'Closed last month', stakePct:55, stakeNote:'Took secondary; retains 30% rollover',
+    blurb:'Designs and makes compound (gallium-nitride) semiconductors for radar, 5G and electric-vehicle power systems.',
+    fin:{revenue:'£30m', valType:'Enterprise value', valuation:'£120m', employees:'220', founded:'2011'},
+    cap:[{n:'PE fund (new)',p:55},{n:'Dr. A. Pickering (Founder)',p:30,target:true},{n:'Management',p:10},{n:'Employee scheme',p:5}],
+    why:'Recapitalised by a mid-market PE fund at £120m EV; founder took ~£35m secondary while retaining rollover equity.',
+    rationale:'Closed last month — proceeds recently received, rollover equity to manage long-term.',
+    angle:'Manage the cash proceeds and advise on the retained rollover stake.', source:'Companies House' },
+
+  { id:6, horizon:'month', priority:'emerging', name:'Captain Sarah Doyle', role:'CEO & co-founder', company:'Tidewatch Systems', sector:'Defence',
+    event:'Funding round', low:14, high:22, timing:'Raise announced 2 weeks ago', stakePct:30, stakeNote:'No secondary yet — paper value',
+    blurb:'Maritime-domain-awareness software using AI to flag anomalous vessel behaviour from satellite AIS and radar feeds.',
+    fin:{revenue:'£7m', valType:'Valuation', valuation:'£60m', employees:'65', founded:'2017'},
+    cap:[{n:'Capt. S. Doyle (CEO)',p:30,target:true},{n:'Co-founder',p:16},{n:'Defence VC',p:30},{n:'Other VCs',p:16},{n:'Option pool',p:8}],
+    why:'Raised a £40m Series B led by a defence-focused fund; the real opportunity is the next secondary or exit.',
+    rationale:'Recent raise signals momentum; a future liquidity event is the prize.',
+    angle:'Relationship-build now; flag founder-secondary options at the next round.', source:'Sifted' },
+
+  { id:7, horizon:'month', priority:'emerging', name:'Robert Maddox', role:'Director (PDMR)', company:'Aegis Cyber Defence', sector:'Critical Tech',
+    event:'Director disposal', low:10, high:14, timing:'RNS 10 days ago', stakePct:8, stakeNote:'Disposed ~£11m; retains balance',
+    blurb:'AIM-listed managed cyber-defence provider — 24/7 threat detection for financial-services and critical-infrastructure clients.',
+    fin:{revenue:'£45m', valType:'Market cap', valuation:'£180m', employees:'300', founded:'2009'},
+    cap:[{n:'Founders & management',p:22},{n:'R. Maddox',p:8,target:true},{n:'Institutions',p:55},{n:'Retail',p:15}],
+    why:'Disposed of ~£11m of shares following strong full-year results.',
+    rationale:'Disposal completed this month — liquid cash now needs a home.',
+    angle:'Investment of disposal proceeds; introduce discretionary and structured options.', source:'RNS · PDMR' },
+
+  { id:8, horizon:'year', priority:'missed', name:'Dr. Helena Vance', role:'Founder & CEO', company:'Orbital Edge', sector:'Critical Tech',
+    event:'Founder exit', low:80, high:120, timing:'Acquired Q1 this year', stakePct:45, stakeNote:'Full exit',
+    blurb:'Earth-observation company operating a synthetic-aperture-radar satellite constellation for defence and climate monitoring.',
+    fin:{revenue:'£35m', valType:'Deal value', valuation:'£220m', employees:'240', founded:'2014'},
+    cap:[{n:'Dr. H. Vance (Founder)',p:45,target:true},{n:'Co-founders',p:18},{n:'VC investors',p:27},{n:'Employee scheme',p:10}],
+    why:'Acquired by a European space group for ~£220m earlier this year; ~£100m personal proceeds.',
+    rationale:'Exit completed months ago, but a large proceeds pool is likely still being deployed.',
+    angle:'Acknowledge the exit; lead with a reinvestment review and family-office set-up.', source:'Press' },
+
+  { id:9, horizon:'year', priority:'missed', name:'Dr. Ravi Mehta', role:'Co-founder', company:'Stratha Materials', sector:'Critical Tech',
+    event:'Secondary share sale', low:25, high:40, timing:'Sold stake 8 months ago', stakePct:28, stakeNote:'Partial secondary; retains equity',
+    blurb:'Develops metamaterials and radar-absorbing coatings used in stealth platforms and advanced antenna systems.',
+    fin:{revenue:'£12m', valType:'Valuation', valuation:'£115m', employees:'90', founded:'2016'},
+    cap:[{n:'Co-founder',p:30},{n:'Dr. R. Mehta (Co-founder)',p:28,target:true},{n:'Growth fund',p:24},{n:'Angels',p:12},{n:'Pool',p:6}],
+    why:'Sold ~£30m of his holding in a growth round last year; retains equity in a fast-scaling business.',
+    rationale:'Earlier event, but reinvestment window and tax-year planning remain live.',
+    angle:'Tax-year-end planning and a diversification conversation around the retained stake.', source:'Beauhurst' },
+
+  { id:10, horizon:'year', priority:'missed', name:'Professor Ian Crawford', role:'Executive Chairman', company:'Pathogen Sentinel', sector:'Critical Tech',
+    event:'IPO', low:35, high:55, timing:'Listed last autumn', stakePct:20, stakeNote:'Lock-up now expired',
+    blurb:'Biosurveillance company providing pathogen-detection platforms for pandemic early-warning and biodefence programmes.',
+    fin:{revenue:'£18m', valType:'Market cap', valuation:'£225m', employees:'110', founded:'2013'},
+    cap:[{n:'Prof. I. Crawford (Chairman)',p:20,target:true},{n:'Founders & management',p:18},{n:'Institutions',p:47},{n:'Retail',p:15}],
+    why:'IPO\u2019d on AIM last autumn; chairman\u2019s ~£45m holding became tradeable as the lock-up expired.',
+    rationale:'Lock-up expiry means newly liquid wealth — a fresh trigger despite the older listing.',
+    angle:'Lombard lending against the listed holding plus a phased diversification plan.', source:'RNS' },
+];
+
+const WATCH = [
+  { company:'Graymatter Intelligence', sector:'Critical Tech', stage:'SERIES A', horizon:'12–24 mo', why:'Signals-intelligence AI scaling fast on government frameworks; founders diluted but stake value climbing.', signal:'New CFO hire (ex-bank) — classic pre-raise move.' },
+  { company:'Sentryx', sector:'Critical Tech', stage:'SEED', horizon:'2–3 yrs', why:'Zero-trust platform for critical national infrastructure with early NCSC traction.', signal:'£25m DASA contract awarded last quarter.' },
+  { company:'Pendle Space Systems', sector:'Critical Tech', stage:'SERIES B', horizon:'12–24 mo', why:'In-orbit servicing firm at Harwell; PE funds reportedly circling.', signal:'Appointed a PE-background NED in March.' },
+  { company:'Pitchside Analytics', sector:'Sports', stage:'SERIES A', horizon:'12–24 mo', why:'Sports-performance data platform with Premier League clients; founder retains majority.', signal:'Strategic review rumoured per trade press.' },
+  { company:'Silicon Crest', sector:'Critical Tech', stage:'PE-BACKED', horizon:'6–12 mo', why:'Chip-design house backed in 2019 — squarely in the PE exit window.', signal:'Five-year hold reached; sale process likely 2026.' },
+  { company:'Stormguard Energy', sector:'Defence', stage:'SERIES B', horizon:'12–24 mo', why:'Grid-resilience tech now classed as critical infrastructure; strong MoD interest.', signal:'Doubled headcount; opened a US office.' },
+];
+
+const SCAN_MSGS = ['SCANNING COMPANIES HOUSE…','CHECKING CONTRACTS FINDER…','PARSING RNS DISCLOSURES…','READING SECTOR PRESS…','SCORING LIQUIDITY EVENTS…'];
+const CAP_COLOURS = ['#4a8fd4','#7a8499','#3fb87f','#5e677d','#9a7b3f'];
+
+let starred=new Set(), contacted=new Set(), openCards=new Set();
+let activeHorizon='week', activeSector='all', searchQuery='';
+const PRI_LABEL={urgent:'Act now',active:'Active',emerging:'Emerging',missed:'Missed · pursue'};
+
+function liUrl(name,company){return 'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(name+' '+company);}
+function chUrl(company){return 'https://find-and-update.company-information.service.gov.uk/search?q='+encodeURIComponent(company);}
+
+function capHTML(cap){
+  let ci=0;
+  const segs=cap.map(s=>{const c=s.target?'var(--gold)':CAP_COLOURS[ci++%CAP_COLOURS.length];return `<div class="cap-seg" style="width:${s.p}%;background:${c};"></div>`;}).join('');
+  ci=0;
+  const rows=cap.map(s=>{const c=s.target?'var(--gold)':CAP_COLOURS[ci++%CAP_COLOURS.length];return `<div class="cap-row ${s.target?'target':''}"><span class="cap-sw" style="background:${c};"></span><span class="cap-name">${s.n}</span><span class="cap-pct">${s.p}%</span></div>`;}).join('');
+  return `<div class="cap-bar">${segs}</div><div class="cap-legend">${rows}</div>`;
+}
+
+function cardHTML(o,i){
+  const isOpen=openCards.has(o.id), isStar=starred.has(o.id), isDone=contacted.has(o.id);
+  const f=o.fin;
+  return `
+  <div class="card ${o.priority} ${isOpen?'open':''}" data-id="${o.id}" style="animation-delay:${i*0.05}s">
+    <div class="glow"></div>
+    <div class="card-top">
+      <span class="badge ${o.priority}">${PRI_LABEL[o.priority]}</span>
+      <span class="sector-tag">${o.sector}</span>
+      <span class="star ${isStar?'on':''}" data-star="${o.id}">${isStar?'★':'☆'}</span>
+    </div>
+    <h3>${o.name}</h3>
+    <div class="role">${o.role} · <b>${o.company}</b></div>
+    <div class="stake-pill"><span class="lbl">Holds</span> ${o.stakePct}%</div>
+    <div class="card-fig">
+      <div class="figure"><span class="flabel">Est. personal liquidity</span><span class="fval">£${o.low}<span>–${o.high}m</span></span></div>
+      <div class="timing">${o.timing}</div>
+    </div>
+    <div class="detail"><div class="detail-inner">
+      <div class="d-head">What they do</div>
+      <div class="blurb">${o.blurb}</div>
+      <div class="d-head">Company financials</div>
+      <div class="fin-grid">
+        <div class="fin-cell"><div class="fk">Revenue</div><div class="fv">${f.revenue}</div></div>
+        <div class="fin-cell"><div class="fk">${f.valType}</div><div class="fv">${f.valuation}</div></div>
+        <div class="fin-cell"><div class="fk">Employees</div><div class="fv">${f.employees}</div></div>
+        <div class="fin-cell"><div class="fk">Founded</div><div class="fv">${f.founded}</div></div>
+      </div>
+      <div class="d-head">Shareholding</div>
+      ${capHTML(o.cap)}
+      ${o.stakeNote?`<div class="row" style="margin-top:11px;"><div class="v" style="font-size:12px;color:var(--text-dim);">${o.name.split(' ').slice(-1)} — ${o.stakeNote}.</div></div>`:''}
+      <div class="d-head">The opportunity</div>
+      <div class="row"><div class="k">Why it matters</div><div class="v">${o.why}</div></div>
+      <div class="row"><div class="k">Why this window</div><div class="v rationale">${o.rationale}</div></div>
+      <div class="row"><div class="k">Suggested approach</div><div class="v angle">${o.angle}</div></div>
+      <div class="row"><div class="k">Source signal</div><div class="v src">${o.source}</div></div>
+      <div class="actions">
+        <a class="act" href="${liUrl(o.name,o.company)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">LinkedIn ↗</a>
+        <a class="act" href="${chUrl(o.company)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Co. House ↗</a>
+        <div class="act ${isDone?'done':'primary'}" data-done="${o.id}" onclick="event.stopPropagation()">${isDone?'✓ Contacted':'Mark contacted'}</div>
+      </div>
+    </div></div>
+  </div>`;
+}
+
+function watchHTML(w,i){
+  return `<div class="wcard" style="animation-delay:${i*0.05}s">
+    <div class="wcard-top"><h3>${w.company}</h3><span class="stage">${w.stage}</span></div>
+    <div class="why">${w.why}</div>
+    <div class="wcard-foot"><span>${w.sector} · <span style="color:var(--gold);">${w.signal}</span></span><span class="horizon">${w.horizon}</span></div>
+  </div>`;
+}
+
+function renderToday(){
+  const urgent=OPPS.filter(o=>o.priority==='urgent'), active=OPPS.filter(o=>o.priority==='active');
+  let html='';
+  if(urgent.length){html+=`<div class="section-label"><span class="dot" style="background:var(--urgent);"></span><h2>Act Now</h2><span class="count">${urgent.length} time-sensitive</span></div>`;html+=urgent.map((o,i)=>cardHTML(o,i)).join('');}
+  if(active.length){html+=`<div class="section-label" style="margin-top:24px;"><span class="dot" style="background:var(--active);"></span><h2>Active This Week</h2><span class="count">${active.length}</span></div>`;html+=active.map((o,i)=>cardHTML(o,i)).join('');}
+  document.getElementById('view-today').innerHTML=html||`<div class="empty"><div class="ico">◷</div><p>No time-sensitive prospects right now.</p></div>`;
+}
+function renderPipeline(){
+  let list=OPPS.filter(o=>o.horizon===activeHorizon);
+  if(activeSector!=='all')list=list.filter(o=>o.sector===activeSector);
+  if(searchQuery){const q=searchQuery.toLowerCase();list=list.filter(o=>(o.name+o.role+o.company+o.sector+o.event).toLowerCase().includes(q));}
+  document.getElementById('pipelineList').innerHTML=list.length?list.map((o,i)=>cardHTML(o,i)).join(''):`<div class="empty"><div class="ico">⌕</div><p>No prospects match these filters.</p></div>`;
+}
+function renderWatch(){document.getElementById('watchList').innerHTML=WATCH.map((w,i)=>watchHTML(w,i)).join('');document.getElementById('watchcount').textContent=WATCH.length;}
+function renderStats(){
+  const total=OPPS.reduce((s,o)=>s+(o.low+o.high)/2,0);
+  document.getElementById('pipeval').textContent='£'+Math.round(total)+'m';
+  document.getElementById('pipecount').textContent=OPPS.length+' live prospects';
+  document.getElementById('newtoday').textContent=OPPS.filter(o=>o.horizon==='week').length;
+  document.getElementById('urgentcount').textContent=OPPS.filter(o=>o.priority==='urgent').length;
+  document.getElementById('hc-week').textContent=OPPS.filter(o=>o.horizon==='week').length;
+  document.getElementById('hc-month').textContent=OPPS.filter(o=>o.horizon==='month').length;
+  document.getElementById('hc-year').textContent=OPPS.filter(o=>o.horizon==='year').length;
+}
+
+document.querySelectorAll('.navbtn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const tab=btn.dataset.tab;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+tab).classList.add('active');document.querySelector('main').scrollTop=0;});});
+document.getElementById('horizonSeg').addEventListener('click',e=>{const seg=e.target.closest('.seg');if(!seg)return;document.querySelectorAll('.seg').forEach(s=>s.classList.remove('active'));seg.classList.add('active');activeHorizon=seg.dataset.h;renderPipeline();});
+document.getElementById('sectorChips').addEventListener('click',e=>{const chip=e.target.closest('.chip');if(!chip)return;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));chip.classList.add('active');activeSector=chip.dataset.s;renderPipeline();});
+document.getElementById('searchInput').addEventListener('input',e=>{searchQuery=e.target.value;renderPipeline();});
+document.querySelector('main').addEventListener('click',e=>{
+  const star=e.target.closest('[data-star]');if(star){const id=+star.dataset.star;starred.has(id)?starred.delete(id):starred.add(id);rerender();return;}
+  const done=e.target.closest('[data-done]');if(done){const id=+done.dataset.done;contacted.has(id)?contacted.delete(id):contacted.add(id);rerender();return;}
+  const card=e.target.closest('.card');if(card){const id=+card.dataset.id;openCards.has(id)?openCards.delete(id):openCards.add(id);card.classList.toggle('open');}
+});
+function rerender(){renderToday();renderPipeline();}
+function runScan(){
+  const ov=document.getElementById('scanOverlay'),txt=document.getElementById('scanText'),btn=document.getElementById('refreshBtn');
+  ov.classList.add('show');btn.classList.add('spinning');let i=0;txt.textContent=SCAN_MSGS[0];
+  const iv=setInterval(()=>{i++;if(i<SCAN_MSGS.length)txt.textContent=SCAN_MSGS[i];},520);
+  setTimeout(()=>{clearInterval(iv);ov.classList.remove('show');btn.classList.remove('spinning');const t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});document.getElementById('livetext').textContent='Last scan · today '+t;},2700);
+}
+document.getElementById('refreshBtn').addEventListener('click',runScan);
+renderStats();renderToday();renderPipeline();renderWatch();
+</script>
+</body>
+</html>
