@@ -157,6 +157,23 @@
   .scanning.show{display:flex;}
   .scanring{width:54px;height:54px;border:2px solid var(--hairline);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite;}
   .scanning p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;}
+
+  /* ---- passphrase gate ---- */
+  .gate{position:absolute;inset:0;z-index:40;background:linear-gradient(180deg,#0a0e1a,#05070d);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+  .gate.show{display:flex;}
+  .gate .glogo{font-family:'Fraunces',serif;font-weight:600;font-size:34px;letter-spacing:-0.5px;margin-bottom:6px;}
+  .gate .glogo em{font-style:italic;color:var(--gold-bright);}
+  .gate .gsub{font-size:12px;color:var(--text-dim);margin-bottom:28px;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;}
+  .gate input{width:100%;max-width:300px;background:rgba(255,255,255,0.04);border:1px solid var(--hairline);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'Hanken Grotesk',sans-serif;outline:none;text-align:center;letter-spacing:1px;}
+  .gate input:focus{border-color:var(--gold);}
+  .gate button{width:100%;max-width:300px;margin-top:12px;background:var(--gold);color:#1a1407;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;font-family:'Hanken Grotesk',sans-serif;}
+  .gate button:active{transform:scale(0.97);}
+  .gate .gerr{margin-top:14px;font-size:12px;color:#ff8a8d;min-height:16px;text-align:center;}
+  .banner{display:none;align-items:center;gap:8px;background:rgba(201,169,97,0.10);border:1px solid var(--hairline);border-radius:10px;padding:9px 13px;margin:0 16px 4px;font-size:12px;color:var(--gold-bright);}
+  .banner.show{display:flex;}
+  .lockbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--hairline-soft);background:transparent;color:var(--text-faint);font-size:15px;display:none;align-items:center;justify-content:center;cursor:pointer;transition:.2s;flex-shrink:0;margin-right:8px;}
+  .lockbtn.show{display:flex;}
+  .lockbtn:active{transform:scale(0.9);}
   ::-webkit-scrollbar{width:0;}
 </style>
 </head>
@@ -169,7 +186,10 @@
         <h1>Prospect<em>.</em></h1>
         <div class="live"><span class="pulse"></span><span id="livetext">Last scan · today 07:00</span></div>
       </div>
-      <div class="refresh" id="refreshBtn" title="Run scan">⟳</div>
+      <div style="display:flex;align-items:center;">
+        <div class="lockbtn" id="lockBtn" title="Lock">⊘</div>
+        <div class="refresh" id="refreshBtn" title="Refresh latest">⟳</div>
+      </div>
     </div>
     <div class="valuestrip">
       <div class="stat"><div class="label">Pipeline value</div><div class="num gold" id="pipeval">£0m</div><div class="sub" id="pipecount">0 live prospects</div></div>
@@ -179,6 +199,7 @@
   </header>
 
   <main>
+    <div class="banner" id="banner"></div>
     <section class="view active" id="view-today"></section>
     <section class="view" id="view-pipeline">
       <div class="segmented" id="horizonSeg">
@@ -220,12 +241,20 @@
     </div>
   </nav>
 
+  <div class="gate" id="gate">
+    <div class="glogo">Prospect<em>.</em></div>
+    <div class="gsub">ENTER PASSPHRASE TO UNLOCK</div>
+    <input type="password" id="ppInput" placeholder="Passphrase" autocomplete="off">
+    <button id="ppBtn">Unlock</button>
+    <div class="gerr" id="ppErr"></div>
+  </div>
+
   <div class="scanning" id="scanOverlay"><div class="scanring"></div><p id="scanText">SCANNING COMPANIES HOUSE…</p></div>
 </div>
 
 <script>
 // ---------- SAMPLE DATA (illustrative — fictional companies & people; live scanner replaces with real public-record data) ----------
-const OPPS = [
+let OPPS = [
   { id:1, horizon:'week', priority:'urgent', name:'Dr. Eleanor Whitlock', role:'Founder & CEO', company:'Lanthorn Quantum', sector:'Critical Tech',
     event:'Secondary share sale', low:42, high:60, timing:'SH01 filed 2 days ago', stakePct:32, stakeNote:'Selling part of holding into the round',
     blurb:'Bristol-based quantum-sensing firm building chip-scale atomic sensors for GPS-denied navigation, with defence and aerospace customers.',
@@ -317,7 +346,7 @@ const OPPS = [
     angle:'Lombard lending against the listed holding plus a phased diversification plan.', source:'RNS' },
 ];
 
-const WATCH = [
+let WATCH = [
   { company:'Graymatter Intelligence', sector:'Critical Tech', stage:'SERIES A', horizon:'12–24 mo', why:'Signals-intelligence AI scaling fast on government frameworks; founders diluted but stake value climbing.', signal:'New CFO hire (ex-bank) — classic pre-raise move.' },
   { company:'Sentryx', sector:'Critical Tech', stage:'SEED', horizon:'2–3 yrs', why:'Zero-trust platform for critical national infrastructure with early NCSC traction.', signal:'£25m DASA contract awarded last quarter.' },
   { company:'Pendle Space Systems', sector:'Critical Tech', stage:'SERIES B', horizon:'12–24 mo', why:'In-orbit servicing firm at Harwell; PE funds reportedly circling.', signal:'Appointed a PE-background NED in March.' },
@@ -432,14 +461,80 @@ document.querySelector('main').addEventListener('click',e=>{
   const card=e.target.closest('.card');if(card){const id=+card.dataset.id;openCards.has(id)?openCards.delete(id):openCards.add(id);card.classList.toggle('open');}
 });
 function rerender(){renderToday();renderPipeline();}
-function runScan(){
+async function pullLatest(){
   const ov=document.getElementById('scanOverlay'),txt=document.getElementById('scanText'),btn=document.getElementById('refreshBtn');
-  ov.classList.add('show');btn.classList.add('spinning');let i=0;txt.textContent=SCAN_MSGS[0];
-  const iv=setInterval(()=>{i++;if(i<SCAN_MSGS.length)txt.textContent=SCAN_MSGS[i];},520);
-  setTimeout(()=>{clearInterval(iv);ov.classList.remove('show');btn.classList.remove('spinning');const t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});document.getElementById('livetext').textContent='Last scan · today '+t;},2700);
+  ov.classList.add('show');btn.classList.add('spinning');txt.textContent='PULLING LATEST INTELLIGENCE…';
+  const b = await fetchBlob();
+  await new Promise(r=>setTimeout(r,500));
+  if (b) { BLOB = b; if (PASS) unlock(PASS); }
+  ov.classList.remove('show');btn.classList.remove('spinning');
 }
-document.getElementById('refreshBtn').addEventListener('click',runScan);
-renderStats();renderToday();renderPipeline();renderWatch();
+document.getElementById('refreshBtn').addEventListener('click',pullLatest);
+// ---------- LIVE DATA LAYER ----------
+const DATA_URL = 'data.json';            // committed by the scanner
+// const WORKER_URL = '';                // (Phase 2) Cloudflare Worker trigger URL
+let PASS = null, BLOB = null, lastGen = null;
+
+function deobfuscate(b64, key){
+  const bin = atob(b64);
+  const tb = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) tb[i] = bin.charCodeAt(i);
+  const kb = new TextEncoder().encode(key);
+  const out = new Uint8Array(tb.length);
+  for (let i=0;i<tb.length;i++) out[i] = tb[i] ^ kb[i % kb.length];
+  return new TextDecoder().decode(out);
+}
+function setLive(t){ document.getElementById('livetext').textContent = t; }
+function showBanner(t){ const b=document.getElementById('banner'); b.textContent='⚑ '+t; b.classList.add('show'); }
+function hideBanner(){ document.getElementById('banner').classList.remove('show'); }
+function showGate(){ document.getElementById('gate').classList.add('show'); document.getElementById('ppInput').focus(); }
+function hideGate(){ document.getElementById('gate').classList.remove('show'); }
+function initRender(){ renderStats(); renderToday(); renderPipeline(); renderWatch(); }
+
+async function fetchBlob(){
+  try { const r = await fetch(DATA_URL + '?cb=' + Date.now()); if (!r.ok) return null; return await r.text(); }
+  catch(e){ return null; }
+}
+function applyData(obj){
+  if (Array.isArray(obj.opps) && obj.opps.length) OPPS = obj.opps;
+  if (Array.isArray(obj.watch)) WATCH = obj.watch;
+  lastGen = obj.generated || null;
+  if (obj.scan_date) setLive('Last scan · ' + obj.scan_date);
+  initRender();
+}
+function unlock(pass){
+  try {
+    const obj = JSON.parse(deobfuscate(BLOB, pass));
+    if (obj && Array.isArray(obj.opps)) {
+      PASS = pass;
+      try { localStorage.setItem('pp', pass); } catch(e){}
+      applyData(obj); hideGate();
+      document.getElementById('lockBtn').classList.add('show');
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+async function boot(){
+  BLOB = await fetchBlob();
+  if (!BLOB) {                              // no live data yet → sample mode
+    showBanner('Sample data — run your first scan to go live.');
+    initRender();
+    return;
+  }
+  let saved = null; try { saved = localStorage.getItem('pp'); } catch(e){}
+  if (saved && unlock(saved)) return;       // auto-unlock with remembered passphrase
+  showGate();                               // otherwise ask
+}
+
+document.getElementById('ppBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('ppInput').value.trim();
+  if (!unlock(v)) document.getElementById('ppErr').textContent = 'Incorrect passphrase — try again.';
+});
+document.getElementById('ppInput').addEventListener('keydown', e=>{ if (e.key==='Enter') document.getElementById('ppBtn').click(); });
+document.getElementById('lockBtn').addEventListener('click', ()=>{ try{ localStorage.removeItem('pp'); }catch(e){} location.reload(); });
+
+boot();
 </script>
 </body>
 </html>
