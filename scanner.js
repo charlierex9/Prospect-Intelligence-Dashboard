@@ -35,25 +35,15 @@ Search the web and return a DETAILED PROSE report (not JSON) of UK liquidity eve
 
 Use the "government customer test": include any company selling to UK Government, MoD, GCHQ, UKIC, NATO, Five Eyes, NHS security, Border Force, or critical national infrastructure — even if the founder doesn't call themselves "defence".
 
-YOU MUST RUN ALL OF THESE SEARCHES — do not stop after one or two:
+Run these 5 searches IN ORDER. After EACH search, write a detailed paragraph naming every company and individual found before moving to the next search.
 
-Search 1:  "UK defence technology acquisition ${y}"
-Search 2:  "UK cyber security funding round ${m} ${y}"
-Search 3:  "UK quantum computing raises ${y}"
-Search 4:  "UK deep tech startup investment ${m} ${y}"
-Search 5:  "UK founder exit acquisition ${y} ${ly}"
-Search 6:  "UK sports club sold ownership ${y} ${ly}"
-Search 7:  "UK AI company acquired ${y}"
-Search 8:  "DASA award ${y} company"
-Search 9:  "UK director share sale RNS defence cyber ${y}"
-Search 10: "UK private equity defence technology exit ${y}"
-Search 11: "UK IPO AIM technology defence ${y}"
-Search 12: "Sifted UK deeptech raises ${m} ${y}"
-Search 13: "companies house SH01 defence cyber UK ${m} ${y}"
-Search 14: "UK semiconductor space biosurveillance OSINT funding ${y}"
-Search 15: "UK sports technology esports investment ${y}"
+Search 1: UK defence cyber AI technology company acquired OR sold OR exit ${y}
+Search 2: UK founder exit liquidity deep tech quantum semiconductor space funding ${y} ${ly}
+Search 3: UK PE buyout recapitalisation MBO technology defence ${y} site:thetakeoverpanel.org.uk
+Search 4: UK sports club ownership change football acquisition media rights ${y} ${ly}
+Search 5: UK director share sale RNS PDMR defence cyber technology AIM ${y}
 
-Run EVERY search above. After each search, write a paragraph on what you found before moving to the next.
+For EACH company found: write the individual's full name, role, company name, what happened, estimated deal size, and estimated personal liquidity based on typical stake percentages.
 
 SECTORS: Hard tech (quantum, semiconductors, space, advanced materials, directed energy, hypersonics); Cyber (CNI, zero-trust, threat intel, IAM, deepfake detection); Bio security (biosurveillance, CBRN); Intelligence (OSINT, GEOINT, SIGINT); Border/maritime (screening, maritime awareness, counter-drone); Sports (clubs, stadiums, media rights, sports tech, esports); GovTech.
 
